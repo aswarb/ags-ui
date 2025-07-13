@@ -6,7 +6,7 @@ import { createPoll } from "ags/time"
 import Workspaces from "./Workspaces"
 
 
-export default function Bar(gdkmonitor: Gdk.Monitor) {
+export default function Bar(gdkmonitor: Gdk.Monitor, monitorId:number) {
 	const time = createPoll("", 1000, "date")
 	const { TOP, LEFT, RIGHT } = Astal.WindowAnchor
 
@@ -23,7 +23,7 @@ export default function Bar(gdkmonitor: Gdk.Monitor) {
 
 			<centerbox cssName="centerbox">
 				<box $type="start">
-					<Workspaces gdkmonitor={gdkmonitor} />
+					<Workspaces monitorId={monitorId} />
 				</box>
 				<box $type="center" />
 				<menubutton $type="end" hexpand halign={Gtk.Align.CENTER}>

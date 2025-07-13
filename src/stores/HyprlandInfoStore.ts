@@ -20,7 +20,7 @@ export interface WindowObject {
 
 export interface MonitorObject {
 	id: number;
-	ativeWorkspace: number;
+	activeWorkspace: number;
 	focused: boolean;
 	disabled: boolean;
 }
@@ -69,7 +69,10 @@ const clients = new Map<string, Hyprland.Client>();
 const activeWorkspaceListenerIds = new Map<number, number[]>();
 type hyprlandGObjectType = Hyprland.Monitor | Hyprland.Workspace | Hyprland.Client | Hyprland.Hyprland
 const GObjectDisconnectors = new Map<hyprlandGObjectType, Set<() => void>>
+
 const [focusedWorkspaceId, setFocusedWorkspaceId] = createState(hyprland.focused_workspace.id);
+
+
 
 const onWorkspaceAdded = (workspace: Hyprland.Workspace) => {
 	const id = workspace.id;
@@ -86,10 +89,10 @@ const onMonitorConnect = (monitor: Hyprland.Monitor) => {
 	const lId = monitor.connect(
 		"notify::active-workspace",
 		(mon: Hyprland.Monitor, _b: unknown) => {
-			console.log(
+			/*console.log(
 				mon.active_workspace.id,
 				mon.active_workspace.monitor.id,
-			);
+			);*/
 			onSubscriptableEvent(callbackKeys.WORKSPACE_CHANGED)
 		},
 	);
@@ -102,6 +105,10 @@ const onMonitorConnect = (monitor: Hyprland.Monitor) => {
 
 	monitors.set(id, monitor);
 };
+
+for (let m of hyprland.get_monitors()) {
+	onMonitorConnect(m)
+}
 
 const onMonitorDisconnect = (monitor: Hyprland.Monitor) => {
 	const id = monitor.id;
@@ -143,11 +150,10 @@ const setters = {
 const store = new DefaultStore(values, setters);
 
 function onSubscriptableEvent(eventkey: callbackKeys) {
-
 	const data = {
-		monitors: Object.values(monitors),
-		workspaces: Object.values(workspaces),
-		windows: Object.values(clients),
+		monitors: getAllMonitors(),
+		workspaces: getAllWorkspaces(),
+		windows: getAllWindows(),
 	} as EventPayload
 
 	const frozenData = Object.freeze(data)
@@ -164,14 +170,13 @@ function onSubscriptableEvent(eventkey: callbackKeys) {
 	}
 
 	relevantCallbacks.forEach((cb) => { cb(frozenData) })
-
 }
 
 export function subscribeToUpdates(key: callbackKeys, callback: (obj: Readonly<EventPayload>) => void): number | null {
 	if (activeListeners[key] != null) {
 		activeListeners[key].add(listenerIdCounter);
 		listenerIdCounter++;
-		callbackMap.set(listenerIdCounter, callback)
+		callbackMap.set(listenerIdCounter - 1, callback)
 		return listenerIdCounter - 1;
 	}
 	return null;
@@ -183,7 +188,7 @@ export function getMonitorObj(id: number): MonitorObject | null {
 	if (monitor != null) {
 		return {
 			id: monitor.id,
-			ativeWorkspace: monitor.active_workspace.id,
+			activeWorkspace: monitor.active_workspace.id,
 			focused: monitor.focused,
 			disabled: monitor.disabled,
 		}
@@ -193,7 +198,7 @@ export function getMonitorObj(id: number): MonitorObject | null {
 }
 
 export function getWorkspaceObj(id: number): WorkspaceObject | null {
-	const workspace = hyprland.get_workspace(id)
+	let workspace = hyprland.get_workspace(id)
 
 	if (workspace != null) {
 		return {
@@ -215,13 +220,32 @@ export function getWindowObj(address: string): WindowObject | null {
 		return {
 			address: window.address,
 			name: window.title,
-			focused: hyprland.focused_client.address === window.address,
+			focused: hyprland.focused_client == null ? false : hyprland.focused_client.address === window.address,
 			fullscreen: window.fullscreen_client === Hyprland.Fullscreen.CURRENT,
 			floating: window.floating,
 		}
 	} else {
 		return null
 	}
+}
+
+export function getAllWorkspaces(): WorkspaceObject[] {
+	const all = hyprland.get_workspaces()
+		.map((workspace: Hyprland.Workspace) => { return getWorkspaceObj(workspace.id) })
+		.filter((obj) => obj != null)
+	return all.sort((a, b) => a.id - b.id)
+}
+export function getAllMonitors(): MonitorObject[] {
+	const all = hyprland.get_monitors()
+		.map((monitor: Hyprland.Monitor) => { return getMonitorObj(monitor.id) })
+		.filter((obj) => obj != null)
+	return all.sort((a, b) => a.id - b.id)
+}
+export function getAllWindows(): WindowObject[] {
+	const all = hyprland.get_clients()
+		.map((window: Hyprland.Client) => { return getWindowObj(window.address) })
+		.filter((obj) => obj != null)
+	return all.sort((a, b) => a.address.localeCompare(b.address))
 }
 
 export function unsubscribeFromUpdates(
