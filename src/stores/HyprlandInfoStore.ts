@@ -67,7 +67,9 @@ const workspaces = new Map<number, Hyprland.Workspace>();
 const clients = new Map<string, Hyprland.Client>();
 
 const activeWorkspaceListenerIds = new Map<number, number[]>();
-const [focusedWorkspaceId, setFocusedWorkspaceId] = createState("");
+type hyprlandGObjectType = Hyprland.Monitor | Hyprland.Workspace | Hyprland.Client | Hyprland.Hyprland
+const GObjectDisconnectors = new Map<hyprlandGObjectType, Set<() => void>>
+const [focusedWorkspaceId, setFocusedWorkspaceId] = createState(hyprland.focused_workspace.id);
 
 const onWorkspaceAdded = (workspace: Hyprland.Workspace) => {
 	const id = workspace.id;
@@ -88,46 +90,48 @@ const onMonitorConnect = (monitor: Hyprland.Monitor) => {
 				mon.active_workspace.id,
 				mon.active_workspace.monitor.id,
 			);
+			onSubscriptableEvent(callbackKeys.WORKSPACE_CHANGED)
 		},
 	);
 
-	if (activeWorkspaceListenerIds.get(id) != undefined) {
-		activeWorkspaceListenerIds.set(id, [] as number[]);
+	if (GObjectDisconnectors.get(monitor) == null) {
+		GObjectDisconnectors.set(monitor, new Set<() => void>)
 	}
-	activeWorkspaceListenerIds.get(id)?.push(lId);
+	GObjectDisconnectors.get(monitor)?.add(() => { monitor.disconnect(lId) })
+
 
 	monitors.set(id, monitor);
 };
 
 const onMonitorDisconnect = (monitor: Hyprland.Monitor) => {
 	const id = monitor.id;
-	const arr = activeWorkspaceListenerIds.get(id);
-	arr?.forEach((id) => {
-		monitor.disconnect(id);
+	const arr = GObjectDisconnectors.get(monitor);
+	arr?.forEach((func) => {
+		func()
 	});
 	activeWorkspaceListenerIds.delete(id);
 	monitors.delete(id);
 };
 
-hyprland.connect(
-	"workspace-added",
-	(_obj: Hyprland.Hyprland, workspace: Hyprland.Workspace) =>
-		onWorkspaceAdded(workspace),
-);
-hyprland.connect(
-	"workspace-removed",
-	(_obj: Hyprland.Hyprland, workspace: Hyprland.Workspace) =>
-		onWorkspaceRemoved(workspace),
-);
-hyprland.connect(
-	"monitor-added",
-	(_obj: Hyprland.Hyprland, mon: Hyprland.Monitor) => onMonitorConnect(mon),
-);
-hyprland.connect(
-	"monitor-removed",
-	(_obj: Hyprland.Hyprland, mon: Hyprland.Monitor) =>
-		onMonitorDisconnect(mon),
-);
+hyprland.connect("workspace-added", (_obj: Hyprland.Hyprland, workspace: Hyprland.Workspace) => {
+	onWorkspaceAdded(workspace)
+	onSubscriptableEvent(callbackKeys.WORKSPACE_ADDED)
+});
+hyprland.connect("workspace-removed", (_obj: Hyprland.Hyprland, workspace: Hyprland.Workspace) => {
+	onWorkspaceRemoved(workspace)
+	onSubscriptableEvent(callbackKeys.WORKSPACE_REMOVED)
+});
+hyprland.connect("monitor-added", (_obj: Hyprland.Hyprland, monitor: Hyprland.Monitor) => {
+	onMonitorConnect(monitor)
+	onSubscriptableEvent(callbackKeys.MONITOR_ADDED)
+});
+hyprland.connect("monitor-removed", (_obj: Hyprland.Hyprland, monitor: Hyprland.Monitor) => {
+	onMonitorDisconnect(monitor)
+	onSubscriptableEvent(callbackKeys.MONITOR_REMOVED)
+});
+hyprland.connect("notify::focused-workspace", (_obj: Hyprland.Hyprland, workspace: Hyprland.Workspace) => {
+	setFocusedWorkspaceId(workspace.id)
+});
 
 const values = {
 	[storeKeys.FOCUSED_WORKSPACE]: focusedWorkspaceId,
@@ -171,6 +175,53 @@ export function subscribeToUpdates(key: callbackKeys, callback: (obj: Readonly<E
 		return listenerIdCounter - 1;
 	}
 	return null;
+}
+
+export function getMonitorObj(id: number): MonitorObject | null {
+	const monitor = hyprland.get_monitor(id)
+
+	if (monitor != null) {
+		return {
+			id: monitor.id,
+			ativeWorkspace: monitor.active_workspace.id,
+			focused: monitor.focused,
+			disabled: monitor.disabled,
+		}
+	} else {
+		return null
+	}
+}
+
+export function getWorkspaceObj(id: number): WorkspaceObject | null {
+	const workspace = hyprland.get_workspace(id)
+
+	if (workspace != null) {
+		return {
+			id: workspace.id,
+			name: workspace.name,
+			monitorId: workspace.monitor.id,
+			clientAddresses: workspace.clients.map((client) => client.address),
+			hasFullscreen: workspace.hasFullscreen,
+		}
+	} else {
+		return null
+	}
+}
+
+export function getWindowObj(address: string): WindowObject | null {
+	const window = hyprland.get_client(address)
+
+	if (window != null) {
+		return {
+			address: window.address,
+			name: window.title,
+			focused: hyprland.focused_client.address === window.address,
+			fullscreen: window.fullscreen_client === Hyprland.Fullscreen.CURRENT,
+			floating: window.floating,
+		}
+	} else {
+		return null
+	}
 }
 
 export function unsubscribeFromUpdates(

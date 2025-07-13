@@ -2,7 +2,7 @@ import { Astal, Gtk, Gdk } from "ags/gtk4"
 import { execAsync } from "ags/process"
 import Hyprland from "gi://AstalHyprland"
 import { Accessor, For, createState } from "ags"
-import { store, Keys } from "../src/stores/HyprlandInfoStore"
+import { store, callbackKeys, storeKeys } from "../src/stores/HyprlandInfoStore"
 
 function WorkspaceButton({ workspace }: { workspace: Hyprland.Workspace}) {
 	const name = workspace.get_name()
@@ -23,10 +23,7 @@ function WorkspaceButton({ workspace }: { workspace: Hyprland.Workspace}) {
 	)
 }
 
-export default function Workspaces({ gdkmonitor }: { gdkmonitor: Gdk.Monitor }) {
-	const hyprland = Hyprland.get_default()
-	const workspaces = store.getValue(Keys.ALL_WORKSPACES)
-
+export default function Workspaces({monitorId} = {monitorId:Number}) {
 	return (
 		<box>
 			<For each={workspaces}>
