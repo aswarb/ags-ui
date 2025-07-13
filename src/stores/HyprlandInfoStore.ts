@@ -25,6 +25,14 @@ export interface MonitorObject {
 	disabled: boolean;
 }
 
+export interface EventPayload {
+	workspaces: WorkspaceObject[];
+	windows: WindowObject[];
+	monitors: MonitorObject[];
+}
+
+type EventCallback = (payload: Readonly<EventPayload>) => void
+
 enum storeKeys {
 	ALL_WORKSPACES = "WORKSPACES",
 	MONITORS = "MONITORS",
@@ -42,8 +50,8 @@ enum callbackKeys {
 
 let listenerIdCounter = 0;
 const activeListeners = {} as Record<callbackKeys, Set<number>>;
+const callbackMap = new Map<number, EventCallback>();
 
-// Cast the values since we know they're the enum values
 const actualCallbackKeys = Object.keys(callbackKeys) as Array<
 	keyof typeof callbackKeys
 >;
@@ -130,25 +138,36 @@ const setters = {
 
 const store = new DefaultStore(values, setters);
 
-function onSubscriptableEvent<T extends {}>(eventkey: callbackKeys, data: T) {
-	switch (eventkey) {
-		case callbackKeys.MONITOR_ADDED:
-			break;
-		case callbackKeys.MONITOR_REMOVED:
-			break;
-		case callbackKeys.WORKSPACE_ADDED:
-			break;
-		case callbackKeys.WORKSPACE_CHANGED:
-			break;
-		case callbackKeys.WORKSPACE_REMOVED:
-			break;
+function onSubscriptableEvent(eventkey: callbackKeys) {
+
+	const data = {
+		monitors: Object.values(monitors),
+		workspaces: Object.values(workspaces),
+		windows: Object.values(clients),
+	} as EventPayload
+
+	const frozenData = Object.freeze(data)
+
+	const relevantListeners = [] as number[]
+	const relevantCallbacks = [] as EventCallback[];
+
+	for (let l of activeListeners[eventkey]) {
+		relevantListeners.push(l)
+		const cb = callbackMap.get(l)
+		if (cb != undefined) {
+			relevantCallbacks.push(cb)
+		}
 	}
+
+	relevantCallbacks.forEach((cb) => { cb(frozenData) })
+
 }
 
-export function subscribeToUpdates(key: callbackKeys): number | null {
+export function subscribeToUpdates(key: callbackKeys, callback: (obj: Readonly<EventPayload>) => void): number | null {
 	if (activeListeners[key] != null) {
 		activeListeners[key].add(listenerIdCounter);
 		listenerIdCounter++;
+		callbackMap.set(listenerIdCounter, callback)
 		return listenerIdCounter - 1;
 	}
 	return null;
@@ -159,6 +178,7 @@ export function unsubscribeFromUpdates(
 	listenerId: number,
 ): void {
 	activeListeners[key]?.delete(listenerId);
+	callbackMap.delete(listenerId);
 }
 
 export { callbackKeys, store, storeKeys };
