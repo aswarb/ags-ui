@@ -1,6 +1,7 @@
 // https://gitlab.gnome.org/GNOME/gtk/-/blob/gtk-3-24/gtk/theme/Adwaita/_colors-public.scss
 $fg-color: #{"@theme_fg_color"};
 $bg-color: #{"@theme_bg_color"};
+$border-radius-curve: 0.75em;
 
 window.Bar {
   background: transparent;
@@ -14,10 +15,12 @@ window.Bar {
   }
 
   button {
-    border-radius: 8px;
+    border-radius: $border-radius-curve;
     margin: 2px;
-  }
+    transition:all 0.2s
 
+  }
+  
   button.active{
     background:red;
   }

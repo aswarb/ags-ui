@@ -61,7 +61,7 @@ export default function Workspaces({ monitorId }: { monitorId: number }) {
 
 
 	return (
-		<box>
+		<box halign={Gtk.Align.START}>
 			<For each={workspaces}>
 				{(item, index) =>
 					<WorkspaceButton

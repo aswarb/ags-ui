@@ -4,10 +4,11 @@ import { execAsync } from "ags/process"
 import { createPoll } from "ags/time"
 
 import Workspaces from "./Workspaces"
+import FocusedProgramBox from "./focusedProgramBox"
 
 
-export default function Bar(gdkmonitor: Gdk.Monitor, monitorId:number) {
-	const time = createPoll("", 1000, "date")
+export default function Bar(gdkmonitor: Gdk.Monitor, monitorId: number) {
+	const time = createPoll("", 950, "date")
 	const { TOP, LEFT, RIGHT } = Astal.WindowAnchor
 
 	return (
@@ -22,11 +23,13 @@ export default function Bar(gdkmonitor: Gdk.Monitor, monitorId:number) {
 		>
 
 			<centerbox cssName="centerbox">
-				<box $type="start">
+				<box $type="start" homogeneous={false}>
 					<Workspaces monitorId={monitorId} />
 				</box>
-				<box $type="center" />
-				<menubutton $type="end" hexpand halign={Gtk.Align.CENTER}>
+				<box $type="center" >
+					<FocusedProgramBox monitorId={monitorId} />
+				</box>
+				<menubutton $type="end" hexpand halign={Gtk.Align.END}>
 					<label label={time} />
 					<popover>
 						<Gtk.Calendar />
