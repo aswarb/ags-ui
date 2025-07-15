@@ -40,6 +40,7 @@ enum storeKeys {
 	FOCUSED_WINDOW = "FOCUSED_WINDOW",
 	ACTIVE_WORKSPACE = "ACTIVE_WORKSPACE",
 	FOCUSED_CLIENT = "FOCUSED_CLIENT",
+	FOCUSED_WINDOW_TITLE = "FOCUSED_WINDOW_TITLE"
 }
 enum callbackKeys {
 	WORKSPACE_CHANGED = "WORKSPACE_CHANGED",
@@ -47,6 +48,7 @@ enum callbackKeys {
 	WORKSPACE_REMOVED = "WORKSPACE_REMOVED",
 	MONITOR_ADDED = "MONITOR_ADDED",
 	MONITOR_REMOVED = "MONITOR_REMOVED",
+	FOCUSED_WINDOW_CHANGED = "FOCUSED_WINDOW_CHANGED",
 }
 
 let listenerIdCounter = 0;
@@ -68,12 +70,15 @@ const workspaces = new Map<number, Hyprland.Workspace>();
 const clients = new Map<string, Hyprland.Client>();
 
 const activeWorkspaceListenerIds = new Map<number, number[]>();
-type hyprlandGObjectType = Hyprland.Monitor | Hyprland.Workspace | Hyprland.Client | Hyprland.Hyprland
-const GObjectDisconnectors = new Map<hyprlandGObjectType, Set<() => void>>
+const GObjectDisconnectors = {
+	monitors: new Map<number, Map<number, () => void>>(),
+	workspaces: new Map<number, Map<number, () => void>>(),
+	clients: new Map<string, Map<number, () => void>>(),
+}
 
 const [focusedWorkspaceId, setFocusedWorkspaceId] = createState(hyprland.focused_workspace.id);
 const [focusedWindowAddress, setfocusedWindowAddress] = createState(hyprland.get_focused_client().address)
-
+const [focusedWindowTitle, setFocusedWindowTitle] = createState(hyprland.get_focused_client().title)
 
 const onWorkspaceAdded = (workspace: Hyprland.Workspace) => {
 	const id = workspace.id;
@@ -90,21 +95,17 @@ const onMonitorConnect = (monitor: Hyprland.Monitor) => {
 	const lId = monitor.connect(
 		"notify::active-workspace",
 		(mon: Hyprland.Monitor, _b: unknown) => {
-			/*console.log(
-				mon.active_workspace.id,
-				mon.active_workspace.monitor.id,
-			);*/
 			onSubscriptableEvent(callbackKeys.WORKSPACE_CHANGED)
 		},
 	);
-
-	if (GObjectDisconnectors.get(monitor) == null) {
-		GObjectDisconnectors.set(monitor, new Set<() => void>)
+	if (GObjectDisconnectors.monitors.get(monitor.id) == undefined) {
+		GObjectDisconnectors.monitors.set(monitor.id, new Map<number, () => void>)
 	}
-	GObjectDisconnectors.get(monitor)?.add(() => { monitor.disconnect(lId) })
 
-
-	monitors.set(id, monitor);
+	GObjectDisconnectors.monitors.get(monitor.id)?.set(lId, () => {
+		monitor.disconnect(lId);
+		GObjectDisconnectors.monitors.get(monitor.id)?.delete(lId)
+	})
 };
 
 for (let m of hyprland.get_monitors()) {
@@ -113,7 +114,7 @@ for (let m of hyprland.get_monitors()) {
 
 const onMonitorDisconnect = (monitor: Hyprland.Monitor) => {
 	const id = monitor.id;
-	const arr = GObjectDisconnectors.get(monitor);
+	const arr = GObjectDisconnectors.monitors.get(monitor.id);
 	arr?.forEach((func) => {
 		func()
 	});
@@ -141,17 +142,46 @@ hyprland.connect("notify::focused-workspace", (_obj: Hyprland.Hyprland, workspac
 	setFocusedWorkspaceId(workspace.id)
 });
 hyprland.connect("notify::focused-client", (obj: Hyprland.Hyprland, _window: Hyprland.Client) => {
+	const oldClient = hyprland.get_client(focusedWindowAddress.get())
+
+	if (oldClient != null) {
+		const arr = GObjectDisconnectors.clients.get(oldClient.address);
+		arr?.forEach((func, index) => {
+			func()
+		});
+	}
+
 	const client = obj.get_focused_client()
+
+	const lId = client.connect(
+		"notify::title",
+		(client: Hyprland.Client, _b: unknown) => {
+			setFocusedWindowTitle(client.title)
+			onSubscriptableEvent(callbackKeys.FOCUSED_WINDOW_CHANGED)
+		},
+	);
+
+	if (GObjectDisconnectors.clients.get(client.address) == undefined) {
+		GObjectDisconnectors.clients.set(client.address, new Map<number, () => void>())
+	}
+	GObjectDisconnectors.clients.get(client.address)?.set(lId, () => {
+		client.disconnect(lId);
+		GObjectDisconnectors.clients.get(client.address)?.delete(lId)
+	})
+
 	setfocusedWindowAddress(client.address)
+	onSubscriptableEvent(callbackKeys.FOCUSED_WINDOW_CHANGED)
 });
 
 const values = {
 	[storeKeys.FOCUSED_WORKSPACE]: focusedWorkspaceId,
 	[storeKeys.FOCUSED_WINDOW]: focusedWindowAddress,
+	[storeKeys.FOCUSED_WINDOW_TITLE]: focusedWindowTitle,
 };
 const setters = {
 	[storeKeys.FOCUSED_WORKSPACE]: setFocusedWorkspaceId,
 	[storeKeys.FOCUSED_WINDOW]: setfocusedWindowAddress,
+	[storeKeys.FOCUSED_WINDOW_TITLE]: setFocusedWindowTitle,
 };
 
 const store = new DefaultStore(values, setters);
@@ -221,6 +251,7 @@ export function getWorkspaceObj(id: number): WorkspaceObject | null {
 }
 
 export function getWindowObj(address: string): WindowObject | null {
+	if (address == null) { return null }
 	const window = hyprland.get_client(address)
 
 	if (window != null) {

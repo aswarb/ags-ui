@@ -26,15 +26,16 @@ export default function Bar(gdkmonitor: Gdk.Monitor, monitorId: number) {
 				<box $type="start" homogeneous={false}>
 					<Workspaces monitorId={monitorId} />
 				</box>
-				<box $type="center" >
-					<FocusedProgramBox monitorId={monitorId} />
+				<box $type="center" width_request={100} >
+					<FocusedProgramBox  monitorId={monitorId} />
 				</box>
-				<menubutton $type="end" hexpand halign={Gtk.Align.END}>
+				<box $type="end" hexpand halign={Gtk.Align.END}>
+				<menubutton >
 					<label label={time} />
 					<popover>
 						<Gtk.Calendar />
 					</popover>
-				</menubutton>
+				</menubutton></box>
 			</centerbox>
 		</window>
 	)
