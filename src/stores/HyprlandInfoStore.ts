@@ -152,10 +152,11 @@ hyprland.connect("notify::focused-client", (obj: Hyprland.Hyprland, _window: Hyp
 	}
 
 	const client = obj.get_focused_client()
-
+	//console.log(client)
 	const lId = client.connect(
 		"notify::title",
 		(client: Hyprland.Client, _b: unknown) => {
+			console.log(client.title)
 			setFocusedWindowTitle(client.title)
 			onSubscriptableEvent(callbackKeys.FOCUSED_WINDOW_CHANGED)
 		},
@@ -170,7 +171,9 @@ hyprland.connect("notify::focused-client", (obj: Hyprland.Hyprland, _window: Hyp
 	})
 
 	setfocusedWindowAddress(client.address)
+	setFocusedWindowTitle(client.title)
 	onSubscriptableEvent(callbackKeys.FOCUSED_WINDOW_CHANGED)
+
 });
 
 const values = {

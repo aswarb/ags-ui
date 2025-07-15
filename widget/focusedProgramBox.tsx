@@ -15,6 +15,7 @@ function Marquee({ width, children }: { width: number, children: Gtk.Widget }): 
 	const scrolledWindow = new Gtk.ScrolledWindow({
 		widthRequest: width,
 		hexpand: false,
+		halign: Gtk.Align.CENTER,
 		hscrollbarPolicy: Gtk.PolicyType.EXTERNAL,
 		vscrollbarPolicy: Gtk.PolicyType.NEVER,
 	})
@@ -26,22 +27,30 @@ function Marquee({ width, children }: { width: number, children: Gtk.Widget }): 
 
 	let scrollPos = 0
 	let direction = 1
+	let pauseUntil = 0
 
-	GLib.timeout_add(GLib.PRIORITY_DEFAULT, 30, () => {
+	GLib.timeout_add(GLib.PRIORITY_DEFAULT, 50, () => {
 		const adj = scrolledWindow.get_hadjustment()
 		if (!adj) return GLib.SOURCE_CONTINUE
 
-		scrollPos += direction * 1
-		const maxScroll = adj.upper - adj.page_size
+		const now = Date.now()
+		if (now < pauseUntil) {
+			//console.log("skipping until", pauseUntil)
+			return GLib.SOURCE_CONTINUE
+		}
 
+		scrollPos += direction * 0.85
+
+		const maxScroll = adj.upper - adj.page_size
 		if (scrollPos >= maxScroll) {
 			scrollPos = maxScroll
 			direction = -1
+			pauseUntil = now + 2000
 		} else if (scrollPos <= 0) {
 			scrollPos = 0
 			direction = 1
+			pauseUntil = now + 2000
 		}
-
 		adj.value = scrollPos
 
 		return GLib.SOURCE_CONTINUE
@@ -57,14 +66,15 @@ export default function FocusedProgramBox({ monitorId }: { monitorId: number }) 
 	return (
 		<box halign={Gtk.Align.CENTER} hexpand>
 			{/* @ts-ignore - This has a problem with passing in With, even though it resolves to a correct widget eventually at runtime */}
-			<Marquee width={550}>
-				<box>
+			<Marquee width={600}>
+				<box halign={Gtk.Align.CENTER}>
 					<With value={focusedWindowAccessor}>
 						{(value) => {
 							return (
 								<label
 									cssName={"focusedWindowLabel"}
 									maxWidthChars={10}
+									halign={Gtk.Align.CENTER}
 									ellipsize={Pango.EllipsizeMode.NONE}
 									overflow={Gtk.Overflow.VISIBLE}
 									singleLineMode={true}
