@@ -28,8 +28,11 @@ function Marquee({ width, children }: { width: number, children: Gtk.Widget }): 
 	let scrollPos = 0
 	let direction = 1
 	let pauseUntil = 0
+	const PAUSEUNTIL_TIMEDELTA = 2000
 
-	GLib.timeout_add(GLib.PRIORITY_DEFAULT, 50, () => {
+	const SCROLL_UPDATE_PERIOD = 50
+
+	GLib.timeout_add(GLib.PRIORITY_DEFAULT, SCROLL_UPDATE_PERIOD, () => {
 		const adj = scrolledWindow.get_hadjustment()
 		if (!adj) return GLib.SOURCE_CONTINUE
 
@@ -45,11 +48,11 @@ function Marquee({ width, children }: { width: number, children: Gtk.Widget }): 
 		if (scrollPos >= maxScroll) {
 			scrollPos = maxScroll
 			direction = -1
-			pauseUntil = now + 2000
+			pauseUntil = now + PAUSEUNTIL_TIMEDELTA
 		} else if (scrollPos <= 0) {
 			scrollPos = 0
 			direction = 1
-			pauseUntil = now + 2000
+			pauseUntil = now + PAUSEUNTIL_TIMEDELTA
 		}
 		adj.value = scrollPos
 
@@ -65,7 +68,7 @@ export default function FocusedProgramBox({ monitorId }: { monitorId: number }) 
 	const focusedWindowAccessor = store.getValue(storeKeys.FOCUSED_WINDOW_TITLE)
 	return (
 		<box halign={Gtk.Align.CENTER} hexpand>
-			{/* @ts-ignore - This has a problem with passing in With, even though it resolves to a correct widget eventually at runtime */}
+			{/* @ts-ignore - Marquee has a problem with passing in With, even though it resolves to a correct widget eventually at runtime */}
 			<Marquee width={600}>
 				<box halign={Gtk.Align.CENTER}>
 					<With value={focusedWindowAccessor}>
