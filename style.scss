@@ -4,24 +4,40 @@ $bg-color: #{"@theme_bg_color"};
 $border-radius-curve: 0.75em;
 
 window.Bar {
-  background: transparent;
+  background: $bg-color;
   color: $fg-color;
   font-weight: bold;
+  padding: 0 12px;
+  min-height: 16px;
 
-  > centerbox {
+  >centerbox {
     background: $bg-color;
-    border-radius: 10px;
-    margin: 8px;
   }
 
   button {
     border-radius: $border-radius-curve;
-    margin: 2px;
-    transition:all 0.2s
-
+    transition: all 0.5s
   }
-  
-  button.active{
-    background:red;
+
+
+  .workspacebox {
+
+    >button {
+      margin: 2px;
+      min-height: 10px;
+      min-width: 10px;
+      padding:0px;
+      border:none;
+      border-radius: 50px;
+
+      &.active {
+        background: red;
+        min-height: 10px;
+        min-width: 20px;
+      }
+    }
+
+
+
   }
 }

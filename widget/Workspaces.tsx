@@ -10,20 +10,18 @@ import {
 	WorkspaceObject,
 	MonitorObject
 } from "../src/stores/HyprlandInfoStore"
-
+import GLib from "gi://GLib";
 function WorkspaceButton({ workspaceObj, active }: { workspaceObj: WorkspaceObject, active: boolean }) {
-	//console.log(`creating workspace button with id ${workspace.id} : ${workspace}`)
 	return (
 		<button
 			onClicked={() => {
-				execAsync(`hyprctl dispatch moveworkspacetomonitor ${workspaceObj.id} current`).then(console.log)
-				execAsync(`hyprctl dispatch workspace ${workspaceObj.id}`).then(console.log)
+				console.log(`~/.config/hypr/scripts/switch_to_workspace.sh ${workspaceObj.id}`)
+				execAsync(`${GLib.get_home_dir()}/.config/hypr/scripts/switch_to_workspace.sh ${workspaceObj.id}`).then(console.log).catch((rejection) => {console.log(rejection)})
 			}}
-			hexpand
 			halign={Gtk.Align.CENTER}
+			valign={Gtk.Align.CENTER}
 			class={[active ? 'active' : ''].join(' ')}
 		>
-			<label label={workspaceObj.name} />
 		</button>
 	)
 }
@@ -61,7 +59,33 @@ export default function Workspaces({ monitorId }: { monitorId: number }) {
 
 
 	return (
-		<box halign={Gtk.Align.START}>
+		<box
+			halign={Gtk.Align.START}
+			valign={Gtk.Align.BASELINE_CENTER}
+			class="workspacebox"
+			$={(self: Gtk.Box) => {
+				const scrollEventController = new Gtk.EventControllerScroll({
+					flags: Gtk.EventControllerScrollFlags.VERTICAL | Gtk.EventControllerScrollFlags.HORIZONTAL
+				})
+				self.add_controller(scrollEventController)
+				scrollEventController.connect("scroll", (_event, dx: number, dy: number) => {
+					if (dy < 0) {
+						console.log("scroll down")
+						return
+					} else if (dy > 0) {
+						console.log("scroll up")
+						return
+					}
+					if (dx < 0) {
+						console.log("scroll left")
+						return
+					} else if (dx < 0) {
+						console.log("scroll right")
+						return
+					}
+				})
+			}}
+		>
 			<For each={workspaces}>
 				{(item, index) =>
 					<WorkspaceButton

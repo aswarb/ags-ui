@@ -21,8 +21,8 @@ export default function Bar(gdkmonitor: Gdk.Monitor, monitorId: number) {
 			application={app}
 		>
 
-			<centerbox cssName="centerbox">
-				<box $type="start" homogeneous={false}>
+			<centerbox cssName="centerbox" class="workspacebox">
+				<box $type="start" homogeneous={false} halign={Gtk.Align.START} spacing={8}>
 					<Workspaces monitorId={monitorId} />
 
 					<FocusedProgramBox monitorId={monitorId} />

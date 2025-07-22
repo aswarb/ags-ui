@@ -15,7 +15,7 @@ function Marquee({ width, children }: { width: number, children: Gtk.Widget }): 
 	const scrolledWindow = new Gtk.ScrolledWindow({
 		widthRequest: width,
 		hexpand: false,
-		halign: Gtk.Align.CENTER,
+		halign: Gtk.Align.START,
 		hscrollbarPolicy: Gtk.PolicyType.EXTERNAL,
 		vscrollbarPolicy: Gtk.PolicyType.NEVER,
 	})
@@ -67,10 +67,10 @@ export default function FocusedProgramBox({ monitorId }: { monitorId: number }) 
 	const monitorObj = getMonitorObj(monitorId) as MonitorObject
 	const focusedWindowAccessor = store.getValue(storeKeys.FOCUSED_WINDOW_TITLE)
 	return (
-		<box halign={Gtk.Align.CENTER} hexpand>
+		<box halign={Gtk.Align.START} hexpand>
 			{/* @ts-ignore - Marquee has a problem with passing in With, even though it resolves to a correct widget eventually at runtime */}
-			<Marquee width={600}>
-				<box halign={Gtk.Align.CENTER}>
+			<Marquee width={300}>
+				<box halign={Gtk.Align.START}>
 					<With value={focusedWindowAccessor}>
 						{(value) => {
 							return (
