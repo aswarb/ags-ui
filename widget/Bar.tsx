@@ -3,6 +3,7 @@ import { Astal, Gtk, Gdk } from "ags/gtk4"
 import { execAsync } from "ags/process"
 import { createPoll } from "ags/time"
 
+import AppLauncher from "./AppLauncher"
 import Workspaces from "./Workspaces"
 import FocusedProgramBox from "./focusedProgramBox"
 import SysTray from "./Tray"
@@ -23,6 +24,7 @@ export default function Bar(gdkmonitor: Gdk.Monitor, monitorId: number) {
 
 			<centerbox cssName="centerbox" class="workspacebox">
 				<box $type="start" homogeneous={false} halign={Gtk.Align.START} spacing={8}>
+					<AppLauncher />
 					<Workspaces monitorId={monitorId} />
 
 					<FocusedProgramBox monitorId={monitorId} />
@@ -37,7 +39,7 @@ export default function Bar(gdkmonitor: Gdk.Monitor, monitorId: number) {
 					</menubutton>
 				</box>
 				<box $type="end" hexpand halign={Gtk.Align.END}>
-				<SysTray />
+					<SysTray />
 				</box>
 			</centerbox>
 		</window>

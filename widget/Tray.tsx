@@ -38,33 +38,20 @@ export default function SysTray() {
 									self.insert_action_group(`dbusmenu`, item.actionGroup)
 									const actionGroupListner = item.connect("notify::action-group", () => {
 										console.log("action group changed")
-										self.insert_action_group('dbusmenu', null)
 										self.insert_action_group(`dbusmenu`, item.actionGroup)
-										self.set_menu_model(item.menu_model)
 									})
 
 									const menuModelListener = item.connect("notify::menu-model", () => {
-										self.set_menu_model(null);   // Clear old
 										self.set_menu_model(item.menu_model);  // Attach new
-										self.insert_action_group('dbusmenu', null)
 										self.insert_action_group(`dbusmenu`, item.actionGroup)
 									});
-									/*
-																		const menuModelListener = item.menu_model.connect("items-changed", () => {
-																			console.log("menu model changed")
-																			self.insert_action_group('dbusmenu', null)
-																			self.insert_action_group(`dbusmenu`, item.actionGroup)
-																			self.set_menu_model(item.menu_model)
-																		})*/
+
 									self.connect("destroy", () => {
 										item.disconnect(actionGroupListner)
 										item.menu_model.disconnect(menuModelListener)
 									})
 
 									self.connect("activate", (self: Gtk.MenuButton) => {
-										self.insert_action_group('dbusmenu', null)
-										self.insert_action_group(`dbusmenu`, item.actionGroup)
-										self.set_menu_model(item.menu_model)
 									})
 								}}
 								menu_model={item.menu_model}

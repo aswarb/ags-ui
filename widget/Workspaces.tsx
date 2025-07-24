@@ -11,12 +11,13 @@ import {
 	MonitorObject
 } from "../src/stores/HyprlandInfoStore"
 import GLib from "gi://GLib";
+
+
 function WorkspaceButton({ workspaceObj, active }: { workspaceObj: WorkspaceObject, active: boolean }) {
 	return (
 		<button
 			onClicked={() => {
-				console.log(`~/.config/hypr/scripts/switch_to_workspace.sh ${workspaceObj.id}`)
-				execAsync(`${GLib.get_home_dir()}/.config/hypr/scripts/switch_to_workspace.sh ${workspaceObj.id}`).then(console.log).catch((rejection) => {console.log(rejection)})
+				execAsync(`${GLib.get_home_dir()}/.config/hypr/scripts/switch_to_workspace.sh ${workspaceObj.id}`).then(console.log)
 			}}
 			halign={Gtk.Align.CENTER}
 			valign={Gtk.Align.CENTER}
