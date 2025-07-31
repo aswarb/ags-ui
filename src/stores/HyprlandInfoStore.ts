@@ -142,6 +142,7 @@ hyprland.connect("notify::focused-workspace", (_obj: Hyprland.Hyprland, workspac
 	setFocusedWorkspaceId(workspace.id)
 });
 hyprland.connect("notify::focused-client", (obj: Hyprland.Hyprland, _window: Hyprland.Client) => {
+	if (focusedWindowAddress.get() == null) { return }
 	const oldClient = hyprland.get_client(focusedWindowAddress.get())
 
 	if (oldClient != null) {
@@ -157,8 +158,10 @@ hyprland.connect("notify::focused-client", (obj: Hyprland.Hyprland, _window: Hyp
 		"notify::title",
 		(client: Hyprland.Client, _b: unknown) => {
 			console.log(client.title)
-			setFocusedWindowTitle(client.title)
-			onSubscriptableEvent(callbackKeys.FOCUSED_WINDOW_CHANGED)
+			if (client.title != null) {
+				setFocusedWindowTitle(client.title)
+				onSubscriptableEvent(callbackKeys.FOCUSED_WINDOW_CHANGED)
+			}
 		},
 	);
 
@@ -169,10 +172,13 @@ hyprland.connect("notify::focused-client", (obj: Hyprland.Hyprland, _window: Hyp
 		client.disconnect(lId);
 		GObjectDisconnectors.clients.get(client.address)?.delete(lId)
 	})
-
-	setfocusedWindowAddress(client.address)
-	setFocusedWindowTitle(client.title)
-	onSubscriptableEvent(callbackKeys.FOCUSED_WINDOW_CHANGED)
+	if (client != null && client.address != null) {
+		setfocusedWindowAddress(client.address)
+	}
+	if (client.title != null) {
+		setFocusedWindowTitle(client.title)
+		onSubscriptableEvent(callbackKeys.FOCUSED_WINDOW_CHANGED)
+	}
 
 });
 
