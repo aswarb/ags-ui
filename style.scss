@@ -1,17 +1,21 @@
+@use "sass:color";
+
 // https://gitlab.gnome.org/GNOME/gtk/-/blob/gtk-3-24/gtk/theme/Adwaita/_colors-public.scss
 $fg-color: #{"@theme_fg_color"};
 $bg-color: #{"@theme_bg_color"};
 $border-radius-curve: 0.75em;
 
+$bg: #131318;
+$bg_transparent: color.scale($bg,$alpha:-100%);
+
 window.Bar {
-  background: $bg-color;
+  background: $bg_transparent;
   color: $fg-color;
   font-weight: bold;
   padding: 0 12px;
   min-height: 16px;
-
+  
   >centerbox {
-    background: $bg-color;
   }
 
   button {
