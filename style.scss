@@ -15,7 +15,10 @@ window.Bar {
   padding: 0 12px;
   min-height: 16px;
   
+  
+
   >centerbox {
+    
   }
 
   button {
@@ -35,10 +38,15 @@ window.Bar {
       border-radius: 50px;
 
       &.active {
-        background: red;
-        min-height: 10px;
-        min-width: 20px;
+        border: 1px solid $fg-color;
+        min-height: 12.5px;
+        min-width: 15px;
       }
+    
+      &.focused {
+        background: $fg-color;
+      }
+
     }
 
 

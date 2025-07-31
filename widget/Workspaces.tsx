@@ -13,7 +13,7 @@ import {
 import GLib from "gi://GLib";
 
 
-function WorkspaceButton({ workspaceObj, active }: { workspaceObj: WorkspaceObject, active: boolean }) {
+function WorkspaceButton({ workspaceObj, active, focused }: { workspaceObj: WorkspaceObject, active: boolean, focused: boolean }) {
 	return (
 		<button
 			onClicked={() => {
@@ -21,7 +21,7 @@ function WorkspaceButton({ workspaceObj, active }: { workspaceObj: WorkspaceObje
 			}}
 			halign={Gtk.Align.CENTER}
 			valign={Gtk.Align.CENTER}
-			class={[active ? 'active' : ''].join(' ')}
+			class={[active ? 'active' : '', focused ? 'focused' : ''].join(' ')}
 		>
 		</button>
 	)
@@ -31,7 +31,16 @@ export default function Workspaces({ monitorId }: { monitorId: number }) {
 
 	const monitorObj = getMonitorObj(monitorId) as MonitorObject
 	const [activeWorkspace, setActiveWorkspace] = createState(monitorObj.activeWorkspace)
-	const getWorkspaceInfo = (w: WorkspaceObject) => { return { id: w.id, name: w.name, active: w.id == activeWorkspace.get() } }
+	const getWorkspaceInfo = (w: WorkspaceObject) => {
+		console.log(w.id, w.monitorId, monitorObj.id)
+		const thisMonitor = getMonitorObj(w.monitorId)
+		return {
+			id: w.id,
+			name: w.name,
+			active: w.id === thisMonitor?.activeWorkspace,
+			focused: w.id === activeWorkspace.get() && w.monitorId === monitorObj.id
+		}
+	}
 
 	const [workspaces, setWorkspaces] = createState(getAllWorkspaces().map(getWorkspaceInfo))
 	subscribeToUpdates(callbackKeys.WORKSPACE_ADDED, (payload: Readonly<EventPayload>) => {
@@ -43,10 +52,12 @@ export default function Workspaces({ monitorId }: { monitorId: number }) {
 		//console.log(workspaces.get())
 	})
 	subscribeToUpdates(callbackKeys.WORKSPACE_CHANGED, (payload: Readonly<EventPayload>) => {
+		payload.monitors.map((monObj) => {
+
+		})
 		for (let monObj of payload.monitors) {
-			//console.log(monitorObj.id, monObj.id)
+
 			if (monObj.id == monitorObj.id) {
-				//console.log(activeWorkspace.get(), monObj.activeWorkspace)
 				if (activeWorkspace.get() != monObj.activeWorkspace) {
 					setActiveWorkspace(monObj.activeWorkspace)
 				}
@@ -55,6 +66,7 @@ export default function Workspaces({ monitorId }: { monitorId: number }) {
 		}
 
 		setWorkspaces(payload.workspaces.map(getWorkspaceInfo))
+
 		//console.log(monitorObj.activeWorkspace,activeWorkspace)
 	})
 
@@ -92,6 +104,7 @@ export default function Workspaces({ monitorId }: { monitorId: number }) {
 					<WorkspaceButton
 						workspaceObj={getWorkspaceObj(item.id)!}
 						active={item.active}
+						focused={item.focused}
 					/>
 				}
 			</For>

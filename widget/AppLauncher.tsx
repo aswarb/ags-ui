@@ -3,21 +3,20 @@ import { Astal, Gtk, Gdk } from "ags/gtk4"
 import { Accessor, For, With, createState } from "ags"
 
 import { showAppMenu } from "@callbacks/AppMenuCallbacks"
+import { appRunnerState, setAppRunnerState } from "src/sharedState/appRunnerState"
 
 export default function AppLauncher() {
 
-	const [appLauncherState, setAppLauncherState] = createState(true)
-
 	return (<button
-		sensitive={appLauncherState.get()}
+		sensitive={appRunnerState.get()}
 		$={(self: Gtk.Button) => {
 			const pressListener = self.connect("clicked", (self: Gtk.Button) => {
-				setAppLauncherState(!appLauncherState.get())
-				showAppMenu(() => { setAppLauncherState(!appLauncherState.get()) })
+				setAppRunnerState(!appRunnerState.get())
+				showAppMenu(() => { setAppRunnerState(!appRunnerState.get()) })
 			})
 
-			appLauncherState.subscribe(() => {
-				self.set_sensitive(appLauncherState.get())
+			appRunnerState.subscribe(() => {
+				self.set_sensitive(appRunnerState.get())
 			})
 
 		}}>
